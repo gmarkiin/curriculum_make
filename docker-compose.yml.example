@@ -1,0 +1,56 @@
+version: '3.7'
+
+# Networks
+networks:
+  # Internal network
+  internal:
+    driver: bridge
+
+# Volumes
+volumes:
+  # MySQL volume
+  mysql_data:
+    driver: local
+
+# Services
+services:
+
+  # MySQL
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    networks:
+      - internal
+    volumes:
+      - .:/var/www/public
+      - mysql_data:/var/lib/mysql
+    working_dir: /var/www/public
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=database
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=pass
+    ports:
+      - 3306:3306
+
+  # Nginx
+  nginx:
+    image: webdevops/php-nginx:8.2
+    container_name: nginx
+    networks:
+      - internal
+    depends_on:
+      - mysql
+    links:
+      - mysql
+    volumes:
+      - .:/var/www/public
+    working_dir: /var/www/public
+    environment:
+      - WEB_DOCUMENT_ROOT=/var/www/public
+      - PHP_DATE_TIMEZONE=UTC
+      - WEB_DOCUMENT_INDEX=index.php
+    expose:
+      - 9090
+    ports:
+      - 8080:80
